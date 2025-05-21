@@ -23,10 +23,10 @@
     <h3 class="mt-5">Shopping Cart</h3>
     <ul class="list-group mb-3" id="cartItems"></ul>
     <p><strong>Total: $<span id="total">0.00</span></strong></p>
-    <button class="btn btn-success" onclick="checkout()" id="checkoutBtn" style="display: none;">Checkout</button>
+    <button class="btn btn-success" onclick="openCheckoutModal()" id="checkoutBtn" style="display: none;">Checkout</button>
   </div>
 
-  <!-- Vertically Centered Modal -->
+  <!-- Book Details Modal -->
   <div class="modal fade" id="bookModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -40,6 +40,26 @@
         </div>
         <div class="modal-footer">
           <button class="btn btn-primary" id="modalAddToCartBtn">Add to Cart</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checkout Confirmation Modal -->
+  <div class="modal fade" id="checkoutModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Confirm Checkout</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to complete your purchase?</p>
+          <p><strong>Total: $<span id="checkoutTotal">0.00</span></strong></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-success" id="confirmCheckoutBtn">Confirm</button>
         </div>
       </div>
     </div>
@@ -60,11 +80,12 @@
 
     const cart = [];
 
-    // Bootstrap modal instance variable
     let bookModal;
+    let checkoutModal;
 
     function displayBooks() {
       const bookList = document.getElementById("bookList");
+      bookList.innerHTML = ''; // Clear before adding
       books.forEach(book => {
         const col = document.createElement("div");
         col.className = "col-md-4 mb-4";
@@ -72,7 +93,8 @@
           <div class="card h-100">
             <img src="${book.image}" class="card-img-top" alt="${book.title}" style="height: 300px; object-fit: cover;" />
             <div class="card-body d-flex flex-column">
-              <p class="card-text">Price: $${book.price.toFixed(2)}</p>
+              <h5 class="card-title text-center">${book.title}</h5>
+              <p class="card-text text-center">Price: $${book.price.toFixed(2)}</p>
               <div class="mt-auto d-flex justify-content-between">
                 <button class="btn btn-primary" onclick="openModal(${book.id})">View Details</button>
                 <button class="btn btn-success" onclick="addToCart(${book.id})">Add to Cart</button>
@@ -130,7 +152,7 @@
 
         li.innerHTML = `
           <div>
-            <strong>x${item.quantity}</strong> — $${itemTotal.toFixed(2)}
+            <strong>x${item.quantity}</strong> ${item.title} — $${itemTotal.toFixed(2)}
           </div>
           <button class="btn btn-sm btn-danger" onclick="removeFromCart(${item.id})">Remove</button>
         `;
@@ -141,7 +163,6 @@
       checkoutBtn.style.display = "inline-block";
     }
 
-    // Open modal and fill details
     function openModal(bookId) {
       const book = books.find(b => b.id === bookId);
       if (!book) return;
@@ -151,27 +172,37 @@
       document.getElementById("modalImage").alt = book.title;
       document.getElementById("modalPrice").textContent = book.price.toFixed(2);
 
-      // Update add to cart button inside modal
       const addToCartBtn = document.getElementById("modalAddToCartBtn");
       addToCartBtn.onclick = () => {
         addToCart(book.id);
         bookModal.hide();
       };
 
-      // Show modal
       bookModal.show();
     }
 
-    function checkout() {
+    function openCheckoutModal() {
       if (cart.length === 0) return;
-      alert("Thank you for your purchase!");
-      cart.length = 0;
-      updateCart();
+      const checkoutTotal = document.getElementById("checkoutTotal");
+      let sum = 0;
+      cart.forEach(item => sum += item.price * item.quantity);
+      checkoutTotal.textContent = sum.toFixed(2);
+      checkoutModal.show();
     }
 
-    // Initialize modal after DOM loaded
+    function checkout() {
+      cart.length = 0;
+      updateCart();
+      checkoutModal.hide();
+      alert("Thank you for your purchase!");
+    }
+
     window.onload = () => {
       bookModal = new bootstrap.Modal(document.getElementById('bookModal'));
+      checkoutModal = new bootstrap.Modal(document.getElementById('checkoutModal'));
+
+      document.getElementById("confirmCheckoutBtn").onclick = checkout;
+
       displayBooks();
       updateCart();
     };
